@@ -2,44 +2,78 @@ import xlrd
 import random
 import datetime
 from shutil import copyfile
+from xlutils.filter import process, XLRDReader, XLWTWriter
+
+yourName = "林宜霆"
+year = "110"
+month = "01"
+
+
+def copy2(wb):
+    w = XLWTWriter()
+    process(
+        XLRDReader(wb, 'unknown.xls'),
+        w
+    )
+    return w.output[0][1], w.style_list
 
 
 class CellStructure:
-    def __init__(self, date, dayOfWeek, row):
+    def __init__(self, date, dayOfWeek, row, enable):
         self.date = date
         self.dayOfWeek = dayOfWeek
         self.row = row
         self.startTime = ""
         self.endTime = ""
+        self.enable = enable
 
 
-def getSheetStructure(excelFileName):
+def getStyle(wb, sheet, row, col):
+    return wb.xf_list[sheet.cell(row, col).xf_index]
+
+
+def getSheetStructure(excelFileName, year, month):
     dateCol = 0
     dayOfWeekCol = 1
+    workTimeCol = 2
     startRow = 3
-    wb = xlrd.open_workbook(excelFileName)
+    wb = xlrd.open_workbook(excelFileName, formatting_info=True)
     sheetStructure = []
-    # sheet = wb.get_sheet(0)
-    sheet = wb.sheet_by_index(0)
+    # sheet = wb.get_sheet(1)
+    sheet = wb.sheet_by_name(year + month)
     for row in range(startRow, sheet.nrows):
         if(sheet.row_values(row)[dateCol] == "小計"):
             break
         if(sheet.row_values(row)[dayOfWeekCol]):
+            fmt = getStyle(wb, sheet, row, workTimeCol)
             cellStructure = CellStructure(
                 sheet.row_values(row)[dateCol],
                 sheet.row_values(row)[dayOfWeekCol],
-                row)
+                row,
+                fmt.background.background_colour_index == 65)
             sheetStructure.append(cellStructure)
     return sheetStructure
 
 
-def autoFillTable(excelFileName, outputFileName):
-    sheetStructure = getSheetStructure(excelFileName)
+def autoFillTable(excelFileName, outputFileName, year, month):
+    sheetStructure = getSheetStructure(excelFileName, year, month)
     baseStartHour = 9
     baseEndHour = 18
+
+    workStartTimeCol = 2
+    workEndTimeCol = 3
     tempFile = open("tempData.csv", "w")
+    sourceWb = xlrd.open_workbook(excelFileName, formatting_info=True)
+    sourceSheet = sourceWb.sheet_by_name(year + month)
+
+    wb, styleList = copy2(sourceWb)
+    sheet = wb.get_sheet(year + month)
+    xfIndex = sourceSheet.cell_xf_index(1, 2)
+    style = styleList[xfIndex]
+    sheet.write(1, 2, yourName, style)
+
     for structure in sheetStructure:
-        if(structure.dayOfWeek in ["一", "二", "三", "四", "五"]):
+        if(structure.enable):
             startHour = baseStartHour
             startOffset = random.randrange(-10, 20)
             endHour = baseEndHour
@@ -56,18 +90,24 @@ def autoFillTable(excelFileName, outputFileName):
             endTime = datetime.time(endHour, endOffset)
             structure.startTime = startTime.strftime("%H:%M")
             structure.endTime = endTime.strftime("%H:%M")
+
+        xfIndex = sourceSheet.cell_xf_index(structure.row, workStartTimeCol)
+        style = styleList[xfIndex]
+        sheet.write(structure.row, workStartTimeCol,
+                    structure.startTime, style)
+        sheet.write(structure.row, workEndTimeCol,
+                    structure.endTime, style)
         tempFile.write("{}, {}, {}\n".format(
             structure.date, structure.startTime, structure.endTime))
     tempFile.close()
+    wb.save(excelFileName)
+    wb.save(outputFileName)
+
 
 def main():
-    yourName = "林宜霆"
-    year = "109"
-    month = "11"
-    excelFileName = "姓名_{}{}工時表(範本).xls".format(year, month)
-    outputFileName = "{}_{}{}工時表.xls".format(yourName, year, month)
-    copyfile(excelFileName, outputFileName)
-    autoFillTable(excelFileName, outputFileName)
+    excelFileName = "姓名_{}年度工時表(範本).xls".format(year)
+    outputFileName = "{}_{}年度工時表.xls".format(yourName, year)
+    autoFillTable(excelFileName, outputFileName, year, month)
 
 
 if __name__ == "__main__":
