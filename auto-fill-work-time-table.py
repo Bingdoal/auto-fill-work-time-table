@@ -62,7 +62,6 @@ def autoFillTable(excelFileName, outputFileName, year, month):
 
     workStartTimeCol = 2
     workEndTimeCol = 3
-    tempFile = open("tempData.csv", "w")
     sourceWb = xlrd.open_workbook(excelFileName, formatting_info=True)
     sourceSheet = sourceWb.sheet_by_name(year + month)
 
@@ -97,9 +96,6 @@ def autoFillTable(excelFileName, outputFileName, year, month):
                     structure.startTime, style)
         sheet.write(structure.row, workEndTimeCol,
                     structure.endTime, style)
-        tempFile.write("{}, {}, {}\n".format(
-            structure.date, structure.startTime, structure.endTime))
-    tempFile.close()
     wb.save(excelFileName)
     wb.save(outputFileName)
 
