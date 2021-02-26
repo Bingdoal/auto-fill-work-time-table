@@ -6,7 +6,9 @@ from xlutils.filter import process, XLRDReader, XLWTWriter
 
 yourName = "林宜霆"
 year = "110"
-month = "01"
+month = "02"
+startTimeOffset = 10
+endTimeOffset = 10
 
 
 def copy2(wb):
@@ -71,12 +73,15 @@ def autoFillTable(excelFileName, outputFileName, year, month):
     style = styleList[xfIndex]
     sheet.write(1, 2, yourName, style)
 
+    global startTimeOffset
+    global endTimeOffset
     for structure in sheetStructure:
         if(structure.enable):
             startHour = baseStartHour
-            startOffset = random.randrange(-10, 20)
+            startOffset = random.randrange(-startTimeOffset, startTimeOffset)
             endHour = baseEndHour
-            endOffset = random.randrange(startOffset + 10, startOffset + 20)
+            endOffset = random.randrange(
+                startOffset + endTimeOffset, startOffset + endTimeOffset*2)
 
             if(startOffset < 0):
                 startOffset = 60 + startOffset
