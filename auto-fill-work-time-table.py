@@ -1,11 +1,8 @@
 import argparse
-import sys
 import xlrd
 import random
 import datetime
-from shutil import copyfile
 from xlutils.filter import process, XLRDReader, XLWTWriter
-
 
 def copy2(wb):
     w = XLWTWriter()

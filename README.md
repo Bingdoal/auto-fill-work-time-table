@@ -2,4 +2,4 @@
 
 身為一個工程師，手填工時表是不被允許的
 
-需要 xlrd, xlutils, shutil, pyinstller
+依賴 xlrd, xlutils, pyinstller
