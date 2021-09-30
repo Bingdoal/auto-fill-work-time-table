@@ -1,14 +1,10 @@
+import argparse
+import sys
 import xlrd
 import random
 import datetime
 from shutil import copyfile
 from xlutils.filter import process, XLRDReader, XLWTWriter
-
-yourName = "林宜霆"
-year = "110"
-month = "02"
-startTimeOffset = 10
-endTimeOffset = 10
 
 
 def copy2(wb):
@@ -57,10 +53,10 @@ def getSheetStructure(excelFileName, year, month):
     return sheetStructure
 
 
-def autoFillTable(excelFileName, outputFileName, year, month):
+def autoFillTable(excelFileName, year, month, startTimeStr, workHour, offsetRange, yourName):
     sheetStructure = getSheetStructure(excelFileName, year, month)
-    baseStartHour = 9
-    baseEndHour = 18
+    baseStartHour = int(str.split(startTimeStr, ":")[0])
+    baseStartMinute = int(str.split(startTimeStr, ":")[1])
 
     workStartTimeCol = 2
     workEndTimeCol = 3
@@ -78,20 +74,31 @@ def autoFillTable(excelFileName, outputFileName, year, month):
     for structure in sheetStructure:
         if(structure.enable):
             startHour = baseStartHour
-            startOffset = random.randrange(-startTimeOffset, startTimeOffset)
-            endHour = baseEndHour
-            endOffset = random.randrange(
-                startOffset + endTimeOffset, startOffset + endTimeOffset*2)
+            startOffset = int(baseStartMinute + (random.randrange(
+                -offsetRange, offsetRange) + random.randrange(
+                -offsetRange, offsetRange))/2)
 
             if(startOffset < 0):
                 startOffset = 60 + startOffset
                 startHour -= 1
+            if(startOffset >= 60):
+                startOffset = startOffset % 60
+                startHour += 1
             startTime = datetime.time(startHour, startOffset)
+
+            endHour = startHour + workHour + 1
+            endOffset = int((random.randrange(
+                startOffset, startOffset + offsetRange*1.2) + random.randrange(
+                startOffset, startOffset + offsetRange*1.2))/2)
 
             if(endOffset < 0):
                 endOffset = 60 + endOffset
                 endHour -= 1
+            if(endOffset >= 60):
+                endOffset = endOffset % 60
+                endHour += 1
             endTime = datetime.time(endHour, endOffset)
+
             structure.startTime = startTime.strftime("%H:%M")
             structure.endTime = endTime.strftime("%H:%M")
 
@@ -102,13 +109,28 @@ def autoFillTable(excelFileName, outputFileName, year, month):
         sheet.write(structure.row, workEndTimeCol,
                     structure.endTime, style)
     wb.save(excelFileName)
-    wb.save(outputFileName)
 
 
 def main():
-    excelFileName = "姓名_{}年度工時表(範本).xls".format(year)
-    outputFileName = "{}_{}年度工時表.xls".format(yourName, year)
-    autoFillTable(excelFileName, outputFileName, year, month)
+    parser = argparse.ArgumentParser(
+        description='Auto fill work timetable argument: ')
+    parser.add_argument("year")
+    parser.add_argument("month", type=int)
+    parser.add_argument("name")
+    parser.add_argument("-s", "--startTime",
+                        help="default 09:20", nargs="?", default="09:20")
+    parser.add_argument("-w", "--workHour", help="default 8",
+                        nargs="?", default="8", type=int)
+    parser.add_argument("-o", "--offsetRange", help="default 10", nargs="?",
+                        default="10", type=int)
+    args = parser.parse_args()
+    if args.month < 10:
+        args.month = "0"+str(args.month)
+    else:
+        args.month = str(args.month)
+    excelFileName = "姓名_{}年度工時表(範本).xls".format(args.year)
+    autoFillTable(excelFileName, args.year, args.month,
+                  args.startTime, int(args.workHour), int(args.offsetRange), args.name)
 
 
 if __name__ == "__main__":

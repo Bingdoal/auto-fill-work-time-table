@@ -1,0 +1,1 @@
+pyinstaller -F auto-fill-work-time-table.py
