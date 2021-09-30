@@ -113,7 +113,7 @@ def autoFillTable(excelFileName, year, month, startTimeStr, workHour, offsetRang
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Auto fill work timetable argument: ')
+        description='身為一個工程師，手填工時表是不被允許的: ')
     parser.add_argument("year")
     parser.add_argument("month", type=int)
     parser.add_argument("name")
